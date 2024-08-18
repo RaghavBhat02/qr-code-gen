@@ -5,6 +5,21 @@
 package org.example;
 
 import java.util.regex.Pattern;
+import java.util.BitSet;
+import java.nio.ByteBuffer;
+
+// Currently only supports M (Recovers 15% of data)
+enum ErrorCorrectionLevel {
+    L, M, Q, H
+}
+
+// Currently only supports Alphanumeric
+enum EncodingMode {
+    Numeric,
+    AlphaNum,
+    Byte,
+    Kanji
+}
 
 public class App {
     public String getGreeting() {
@@ -13,35 +28,84 @@ public class App {
 
     public static void main(String[] args) throws Exception {
         // System.out.println(new App().getGreeting());
-        System.out.println(new QRCodeGen("Gov1nda+ -$:%*").getInputString());
+        System.out.println(new QRCodeGen("https://github.com/").getInputString());
     }
-}
-
-enum ErrorCorrectionLevel {
-    L, M, Q, H
 }
 
 class QRCodeGen {
     private String inputString;
-    // private ErrorCorrectionLevel errorCorrectionLevel = ErrorCorrectionLevel.M;
+    private int version;
+    private ErrorCorrectionLevel errCorrLevel = ErrorCorrectionLevel.M;
+    private EncodingMode encMode;
+    private BitSet output = new BitSet();
+    private int outputLength = 0;
 
     QRCodeGen(String input) throws Exception {
         inputString = input;
-        System.out.println(validateAlphanumeric());
-        if (!validateAlphanumeric()) {
-            throw new Exception(
-                    "BAD VALIDATION: input string should have characters only within the alphanumeric QR Code spec");
-        }
+        setMode();
+        System.out.println(output.toString());
+        setVersion();
+
     }
 
     public String getInputString() {
         return inputString;
     }
 
-    private boolean validateAlphanumeric() {
-        // -$%*/.
-        Pattern alphanum = Pattern.compile("[^a-zA-Z0-9+$%*: -]");
-        return !alphanum.matcher(inputString).find();
+    /*  */
+
+    /* Setters */
+
+    // Placeholder for MVP version, in real version this will calculate the version
+    // number [1-40] based on input string length
+    private void setVersion() throws Exception {
+        if (inputString.length() > 20) {
+            throw new Exception(String.format(
+                    "BAD INPUT: For preliminary purposes we only accept strings <= 20 characters long. Your string length: %s",
+                    inputString.length()));
+        }
+        version = 1;
+    }
+
+    // determine whether this is an alphanumeric string
+    private void setMode() throws Exception {
+        Pattern alphanum = Pattern.compile("[^a-zA-Z0-9+$%/.*: -]");
+        boolean res = !alphanum.matcher(inputString).find();
+        if (!res) {
+            throw new Exception(
+                    "BAD VALIDATION: input string should have characters only within the alphanumeric QR Code spec");
+        }
+        encMode = EncodingMode.AlphaNum;
+
+        switch (encMode) {
+            case EncodingMode.AlphaNum:
+                output.set(2);
+                output.clear(3);
+                break;
+            default:
+                break;
+
+        }
+        outputLength = 4;
+
+    }
+
+    private void addCharCount() {
+        // this will be dynamically based on which qrcode version + encoding mode
+        // after MVP
+        int charCountLength = 9;
+        byte[] charCountByteArray = ByteBuffer.allocate(4).putInt(inputString.length()).array();
+        BitSet charCount = BitSet.valueOf(charCountByteArray);
+        mergeBitSet(output, charCount, outputLength);
+    }
+
+    // merges into left Bit Set
+    private void mergeBitSet(BitSet leftSet, BitSet rightSet, int leftLength) {
+        int i = -1;
+        while (i < (rightSet.length() - 1)) {
+            i = rightSet.nextSetBit(i + 1);
+            leftSet.set(leftLength + i);
+        }
 
     }
 

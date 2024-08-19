@@ -8,12 +8,12 @@ This app is built for the purpose of generating nice QR codes. I was trying to g
 
 ### v0.1
 
-[] Generate basic QR Code Version 1 with M error-correction level, no fancy features
-[] Curved Squares
-[] Logo in middle
-[] Link tracking
+[ ] Generate basic QR Code Version 1 with M error-correction level, no fancy features
+[ ] Curved Squares
+[ ] Logo in middle
+[ ] Link tracking
 
 ### v1
 
-[] Add Versions 2+
-[] Add the remaining error correction levels
+[ ] Add Versions 2+
+[ ] Add the remaining error correction levels
